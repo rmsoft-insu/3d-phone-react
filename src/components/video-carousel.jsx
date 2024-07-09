@@ -3,6 +3,8 @@ import { hightlightsSlides as highlightsSlides } from "../constants";
 import { useState } from "react";
 import { useEffect } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/all";
+gsap.registerPlugin(ScrollTrigger);
 import { pauseImg, playImg, replayImg } from "../utils";
 import { useGSAP } from "@gsap/react";
 
@@ -155,6 +157,7 @@ export const VideoCarousel = () => {
                   id="video"
                   playsInline={true}
                   preload="auto"
+                  className={`${list.id === 2 && "translate-x-44"} pointer-events-none`}
                   ref={(el) => (videoRef.current[index] = el)}
                   onEnded={() => {
                     index !== 3
