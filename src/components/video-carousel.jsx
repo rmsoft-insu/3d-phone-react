@@ -24,7 +24,11 @@ export const VideoCarousel = () => {
   const { isEnd, isLastVideo, startPlay, videoId, isPlaying } = video;
 
   useGSAP(() => {
-    gsap.to("#slider", { transform: `translateX(${-100 * video})` });
+    gsap.to("#slider", {
+      transform: `translateX(${-100 * videoId}%)`,
+      duration: 2,
+      ease: "power2.inOut",
+    });
 
     gsap.to("#video", {
       scrollTrigger: {
@@ -38,21 +42,9 @@ export const VideoCarousel = () => {
   }, [isEnd, videoId]);
 
   useEffect(() => {
-    if (loadedData.length > 3) {
-      if (!isPlaying) {
-        videoRef.current[videoId].pause();
-      } else {
-        startPlay && videoRef.current[videoId].play();
-      }
-    }
-  }, [startPlay, videoId, isPlaying, loadedData]);
-
-  const handleLoadedMetadata = (index, event) =>
-    setLoadedData((pre) => [...pre, event]);
-
-  useEffect(() => {
     let currentProgress = 0;
     let span = videoSpanRef.current;
+
     if (span[videoId]) {
       //animate the progress of the video
       let anim = gsap.to(span[videoId], {
@@ -94,7 +86,8 @@ export const VideoCarousel = () => {
       }
       const animUpdate = () => {
         anim.progress(
-          videoRef.current[videoId] / highlightsSlides[videoId].videoDuration,
+          videoRef.current[videoId].currentTime /
+            highlightsSlides[videoId].videoDuration,
         );
       };
 
@@ -104,7 +97,17 @@ export const VideoCarousel = () => {
         gsap.ticker.remove(animUpdate);
       }
     }
-  }, [videoId, startPlay]);
+  }, [videoId, startPlay, isPlaying]);
+
+  useEffect(() => {
+    if (loadedData.length > 3) {
+      if (!isPlaying) {
+        videoRef.current[videoId].pause();
+      } else {
+        startPlay && videoRef.current[videoId].play();
+      }
+    }
+  }, [startPlay, videoId, isPlaying, loadedData]);
 
   const handleProcess = (type, index) => {
     switch (type) {
@@ -115,19 +118,30 @@ export const VideoCarousel = () => {
           videoId: index + 1,
         }));
         break;
+
       case "video-last":
         setVideo((pre) => ({ ...pre, isLastVideo: true }));
         break;
+
       case "video-reset":
         setVideo((pre) => ({ ...pre, isLastVideo: false, videoId: 0 }));
         break;
+
       case "play":
-        setVideo((pre) => ({ ...pre, isPlaying: !pre.isPlaying, videoId: 0 }));
+        setVideo((pre) => ({ ...pre, isPlaying: !pre.isPlaying }));
         break;
+
+      case "pause":
+        setVideo((pre) => ({ ...pre, isPlaying: !pre.isPlaying }));
+        break;
+
       default:
         return video;
     }
   };
+
+  const handleLoadedMetadata = (index, event) =>
+    setLoadedData((pre) => [...pre, event]);
 
   return (
     <>
@@ -137,6 +151,7 @@ export const VideoCarousel = () => {
             <div className="video-carousel_container">
               <div className="flex-center h-full w-full overflow-hidden rounded-3xl bg-black">
                 <video
+                  muted
                   id="video"
                   playsInline={true}
                   preload="auto"
@@ -155,15 +170,14 @@ export const VideoCarousel = () => {
                   onLoadedMetadata={(event) =>
                     handleLoadedMetadata(index, event)
                   }
-                  muted
                 >
                   <source src={list.video} type="video/mp4" />
                 </video>
               </div>
 
               <div className="absolute left-[5%] top-12 z-10">
-                {list.textLists.map((text) => (
-                  <p key={text} className="text-xl font-medium md:text-2xl">
+                {list.textLists.map((text, index) => (
+                  <p key={index} className="text-xl font-medium md:text-2xl">
                     {text}
                   </p>
                 ))}
@@ -194,9 +208,9 @@ export const VideoCarousel = () => {
             onClick={
               isLastVideo
                 ? () => handleProcess("video-reset")
-                : !isPlaying
+                : isPlaying
                   ? () => handleProcess("play")
-                  : handleProcess("pause")
+                  : () => handleProcess("pause")
             }
           />
         </button>
